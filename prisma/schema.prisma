@@ -1,0 +1,223 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CAST
+  MANAGER
+  ADMIN
+}
+
+enum MessagePurpose {
+  THANK_YOU
+  LONG_TIME_NO_SEE
+  BIRTHDAY
+  EVENT_INVITE
+  VISIT_INVITE
+  DATE_INVITE
+  CASUAL_CHAT
+  OTHER
+}
+
+enum MessageTone {
+  NATURAL
+  POLITE
+  FRIENDLY
+  SWEET
+  SHORT
+  LOW_EMOJI
+  HIGH_EMOJI
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String?
+  email        String   @unique
+  passwordHash String?
+  role         UserRole @default(CAST)
+
+  customers                   Customer[]
+  customerNotes               CustomerNote[]
+  visits                      Visit[]
+  generatedMessages           GeneratedMessage[]
+  generatedMessageFeedbacks   GeneratedMessageFeedback[]
+  setting                     UserSetting?
+  workSchedules               WorkSchedule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserSetting {
+  id                 String @id @default(cuid())
+  userId             String @unique
+  monthlySalesTarget Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WorkSchedule {
+  id       String   @id @default(cuid())
+  userId   String
+  workDate DateTime
+  memo     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([workDate])
+}
+
+model Customer {
+  id        String @id @default(cuid())
+  userId    String
+
+  name             String
+  lineName         String?
+  birthday         DateTime?
+  favoriteDrink    String?
+  hobby            String?
+  relationshipMemo String?
+  tags             String[] @default([])
+
+  lastVisitDate DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  notes                     CustomerNote[]
+  visits                    Visit[]
+  generatedMessages         GeneratedMessage[]
+  generatedMessageFeedbacks GeneratedMessageFeedback[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([lastVisitDate])
+}
+
+model CustomerNote {
+  id         String @id @default(cuid())
+  customerId String
+  userId     String
+
+  content   String
+  aiSummary String?
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([userId])
+}
+
+model Visit {
+  id         String @id @default(cuid())
+  customerId String
+  userId     String
+
+  visitedAt DateTime
+  amount    Int?
+  memo      String?
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([customerId])
+  @@index([userId])
+  @@index([visitedAt])
+}
+
+model GeneratedMessage {
+  id         String @id @default(cuid())
+  customerId String
+  userId     String
+
+  purpose       MessagePurpose
+  tone          MessageTone
+  inputContext  String?
+  generatedText String
+  copiedAt      DateTime?
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  feedbacks GeneratedMessageFeedback[]
+
+  createdAt DateTime @default(now())
+
+  @@index([customerId])
+  @@index([userId])
+  @@index([purpose])
+}
+
+// -----------------------------------------------------------------------------
+// Phase 2–5: AI採用学習（保存基盤のみ。自動学習・RAG・FT は未実装）
+//
+// Core Intelligence:
+//   全ユーザー横断学習。返信率や「営業として強い構文」の傾向を将来分析する。
+//
+// Persona Intelligence:
+//   ユーザー別の営業人格を学習。「そのキャストっぽさ」（改行・絵文字・語尾等）を形成する。
+//
+// 最終生成イメージ（将来）:
+//   Core（強い営業） + Persona（その人らしさ）を合成する。
+//
+// Phase 2-9 Persona Effect:
+//   採用時に生成時点の adaptivePersona をスナップショット保存し、
+//   修正率・編集距離で「人格反映が効いたか」を後から分析する。
+//   将来: directive 別効果、自動重み調整、顧客セグメント別最適化。
+// -----------------------------------------------------------------------------
+
+model GeneratedMessageFeedback {
+  id                 String  @id @default(cuid())
+  userId             String
+  customerId         String
+  generatedMessageId String?
+
+  /// 0=案1, 1=案2, 2=案3
+  selectedIndex      Int?
+  aiOriginalText     String
+  finalAdoptedText   String
+  wasEdited          Boolean @default(false)
+  /// createSimpleEditDistance による簡易スコア（将来レヴェンシュタイン等へ拡張可）
+  editDistance       Int?
+
+  purpose MessagePurpose?
+  tone    MessageTone?
+
+  /// Phase 2-9: 生成時に Adaptive Persona がプロンプトへ載ったか（inputContext スナップショット）
+  adaptivePersonaApplied Boolean @default(false)
+  adaptivePersonaTags    String[] @default([])
+  /// soft | balanced | direct（生成時点の communicationStyle.tone）
+  adaptivePersonaTone           String?
+  adaptivePersonaDirectiveCount Int?
+
+  createdAt DateTime @default(now())
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customer         Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  generatedMessage GeneratedMessage? @relation(fields: [generatedMessageId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([customerId])
+  @@index([createdAt])
+  @@index([adaptivePersonaApplied])
+}
+

@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: #fafafa;
+  color: #080b3f;
+  letter-spacing: 0.02em;
+  line-height: 1.7;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer components {
+  .lia-card {
+    @apply rounded-3xl border border-lia-200 bg-white shadow-lia-sm;
+  }
+
+  .lia-card-inner {
+    @apply rounded-3xl border border-lia-200 bg-white shadow-lia-sm;
+  }
+
+  /** 通常の主アクション（濃紺） */
+  .lia-btn-primary {
+    @apply inline-flex items-center justify-center rounded-3xl bg-liaInk-deep px-5 py-3.5 text-center text-sm font-medium text-white shadow-lia-sm transition duration-200 hover:bg-lia-950 active:translate-y-0 active:opacity-95;
+  }
+
+  /** LINE生成・タブ中央など、ピンクで優しく強調 */
+  .lia-btn-accent {
+    @apply inline-flex items-center justify-center rounded-3xl bg-lia-600 px-5 py-3.5 text-center text-sm font-medium text-white shadow-lia-sm transition duration-200 hover:bg-lia-700 active:translate-y-0 active:opacity-95;
+  }
+
+  .lia-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-3xl border border-lia-200 bg-white px-5 py-3 text-center text-sm font-medium text-liaInk-heading shadow-lia-sm transition duration-200 hover:border-lia-300 hover:bg-lia-50 active:opacity-95;
+  }
+
+  .lia-btn-ghost {
+    @apply inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium text-liaInk transition hover:bg-lia-50;
+  }
+
+  .lia-pill {
+    @apply rounded-full border border-lia-200 bg-lia-50 px-3 py-1 text-xs font-medium text-liaInk-heading;
+  }
+
+  .lia-input {
+    @apply w-full rounded-2xl border border-lia-200 bg-white px-4 py-3.5 text-sm font-medium text-liaInk shadow-none outline-none transition placeholder:text-liaInk-subtle focus:border-lia-600 focus:ring-2 focus:ring-lia-400/35;
+  }
+
+  .lia-prose {
+    @apply text-[15px] font-normal leading-[1.78] tracking-[0.015em] text-liaInk;
+  }
+
+  .lia-prose-soft {
+    @apply text-sm font-normal leading-[1.78] tracking-[0.015em] text-liaInk-muted;
+  }
+
+  .lia-heading {
+    @apply font-medium tracking-[0.02em] text-liaInk-heading;
+  }
+
+  /** AI営業マネージャー用：淡いピンク面 */
+  .lia-surface-manager {
+    @apply rounded-3xl border border-lia-300 bg-lia-100 px-5 py-6 shadow-lia-sm;
+  }
+
+  .lia-surface-manager-inner {
+    @apply rounded-3xl border border-lia-200 bg-white px-5 py-5 shadow-none;
+  }
+}
